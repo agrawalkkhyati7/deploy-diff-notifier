@@ -1,0 +1,49 @@
+name: CI
+
+# When should this workflow run?
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the repository code onto the runner.
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Install Java 17 (and cache Maven dependencies for faster runs).
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
+
+      # 3. Make the Maven wrapper executable (needed on Linux runners).
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+
+      # 4. Build the project and run all tests.
+      - name: Build and test
+        run: ./mvnw -B verify
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    # Only build the image after tests pass, and only on pushes to main.
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Build the Docker image to confirm the Dockerfile is valid.
+      - name: Build Docker image
+        run: docker build -t deploy-diff-notifier:ci .

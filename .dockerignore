@@ -1,0 +1,9 @@
+# Don't send these to the Docker build context (faster builds, smaller context)
+target/
+.git/
+.gitignore
+.idea/
+*.iml
+.vscode/
+HELP.md
+*.log
